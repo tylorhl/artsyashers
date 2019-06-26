@@ -74,7 +74,9 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
             return DefinedPathCommands[cmd](commandString);
         }
 
-        public override string ToString() => $@"{CommandIdentifier}{FormatJoin(Format)}";
+        public string ValueString => FormatJoin(Format);
+
+        public override string ToString() => $@"{CommandIdentifier}{ValueString}";
 
         private static (char cmd, float[] values) ParseValues(string commandString)
             =>
