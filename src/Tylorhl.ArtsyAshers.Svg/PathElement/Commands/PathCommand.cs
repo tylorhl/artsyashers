@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
+namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
 {
     public abstract class PathCommand
     {

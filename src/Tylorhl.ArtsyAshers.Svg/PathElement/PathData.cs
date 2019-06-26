@@ -5,9 +5,9 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Tylorhl.ArtsyAshers.Svg.PathData.Commands;
+using Tylorhl.ArtsyAshers.Svg.PathElement.Commands;
 
-namespace Tylorhl.ArtsyAshers.Svg.PathData
+namespace Tylorhl.ArtsyAshers.Svg.PathElement
 {
     public class PathData
     {
