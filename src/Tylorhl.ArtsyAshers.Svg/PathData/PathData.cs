@@ -11,10 +11,6 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData
 {
     public class PathData
     {
-        // Needs to split each command
-        // Consolidate commands where possible
-        // Start and End points
-
         private static readonly ObjectPool<StringBuilder> sbPool = new DefaultObjectPool<StringBuilder>(new StringBuilderPooledObjectPolicy());
 
         private static readonly Regex CommandSplit = new Regex(@"(?=[MLHVCSQTAZ])", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -30,6 +26,8 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData
             for (int i = 0; i < cmds.Length; i++)
                 this.commands.Add(PathCommand.Create(cmds[i]));
 
+            // Since he commands collection is immutable from the outside
+            // create the formatted string ahead of time with command shorthand
             char lastCmd = default;
 
             var sb = sbPool.Get();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.ObjectPool;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -9,6 +10,8 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
 {
     public abstract class PathCommand
     {
+        private static readonly ObjectPool<StringBuilder> sbPool = new DefaultObjectPool<StringBuilder>(new StringBuilderPooledObjectPolicy());
+
         private static readonly Dictionary<string, Func<string, PathCommand>> DefinedPathCommands = new Dictionary<string, Func<string, PathCommand>>(StringComparer.InvariantCultureIgnoreCase)
         {
             ["M"] = s => new M(s),
@@ -87,14 +90,21 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
 
         private string FormatJoin(string format)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = sbPool.Get();
 
-            for (int i = 0; i < Values.Length; i += ParameterCount)
+            try
             {
-                sb.Append(string.Format(format, args: Values.Slice(i, ParameterCount).ToArray()));
-            }
+                for (int i = 0; i < Values.Length; i += ParameterCount)
+                {
+                    sb.Append(string.Format(format, args: Values.Slice(i, ParameterCount).ToArray()));
+                }
 
-            return sb.ToString();
+                return sb.ToString();
+            }
+            finally
+            {
+                sbPool.Return(sb);
+            }
         }
 
         private class M : PathCommand
