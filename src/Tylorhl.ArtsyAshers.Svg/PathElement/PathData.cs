@@ -23,7 +23,8 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
         {
             var cmds = CommandSplit.Split(data);
 
-            for (int i = 0; i < cmds.Length; i++)
+            // i = 1 to avoid the empty first value
+            for (int i = 1; i < cmds.Length; i++)
                 this.commands.Add(PathCommand.Create(cmds[i]));
 
             // Since he commands collection is immutable from the outside
@@ -40,9 +41,11 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
                     {
                         lastCmd = commands[i].CommandIdentifier;
                         sb.Append(lastCmd);
+                        sb.AppendFormat("{0}", commands[i].ValueString);
                     }
+                    else
+                        sb.AppendFormat(" {0}", commands[i].ValueString);
 
-                    sb.AppendFormat(" {0}", commands[i].ValueString);
                 }
 
                 formattedString = sb.ToString();

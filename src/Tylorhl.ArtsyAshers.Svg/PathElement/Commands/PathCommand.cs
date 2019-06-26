@@ -85,7 +85,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             =>
             (
                 commandString[0],
-                ValueSplit.Split(commandString, 0, 1).Cast<float>().ToArray()
+                ValueSplit.Split(commandString.Substring(1), 0, 1).Select(s => float.Parse(s)).ToArray()
             );
 
         private string FormatJoin(string format)
@@ -96,7 +96,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             {
                 for (int i = 0; i < Values.Length; i += ParameterCount)
                 {
-                    sb.Append(string.Format(format, args: Values.Slice(i, ParameterCount).ToArray()));
+                    sb.Append(string.Format(format, args: Values.Slice(i, ParameterCount).ToArray().Cast<object>().ToArray()));
                 }
 
                 return sb.ToString();

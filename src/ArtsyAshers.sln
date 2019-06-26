@@ -5,6 +5,12 @@ VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tylorhl.ArtsyAshers.Svg", "Tylorhl.ArtsyAshers.Svg\Tylorhl.ArtsyAshers.Svg.csproj", "{274A6301-9DAB-4094-8DE1-234F19D7F397}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4C8CA615-3A04-427C-B94F-EF4FAC98C0A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tylorhl.ArtsyAshers.Tests.Svg", "Tests\Tylorhl.ArtsyAshers.Tests.Svg\Tylorhl.ArtsyAshers.Tests.Svg.csproj", "{2A9918D7-46DC-4D0D-82FB-8E9C50CC686C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tylorhl.ArtsyAshers.Tests.Common", "Tests\Tylorhl.ArtsyAshers.Tests.Common\Tylorhl.ArtsyAshers.Tests.Common.csproj", "{D4AF3F4F-FE48-4D36-BCA3-4CFBFC366081}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +21,21 @@ Global
 		{274A6301-9DAB-4094-8DE1-234F19D7F397}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{274A6301-9DAB-4094-8DE1-234F19D7F397}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{274A6301-9DAB-4094-8DE1-234F19D7F397}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A9918D7-46DC-4D0D-82FB-8E9C50CC686C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A9918D7-46DC-4D0D-82FB-8E9C50CC686C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A9918D7-46DC-4D0D-82FB-8E9C50CC686C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A9918D7-46DC-4D0D-82FB-8E9C50CC686C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4AF3F4F-FE48-4D36-BCA3-4CFBFC366081}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4AF3F4F-FE48-4D36-BCA3-4CFBFC366081}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4AF3F4F-FE48-4D36-BCA3-4CFBFC366081}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4AF3F4F-FE48-4D36-BCA3-4CFBFC366081}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2A9918D7-46DC-4D0D-82FB-8E9C50CC686C} = {4C8CA615-3A04-427C-B94F-EF4FAC98C0A5}
+		{D4AF3F4F-FE48-4D36-BCA3-4CFBFC366081} = {4C8CA615-3A04-427C-B94F-EF4FAC98C0A5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A05E65E0-F032-4EC5-BA01-AE773BD0AB50}
