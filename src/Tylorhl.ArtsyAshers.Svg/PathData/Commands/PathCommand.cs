@@ -9,58 +9,87 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
 {
     public abstract class PathCommand
     {
-        private static readonly Dictionary<char, int> DefinedPathCommands = new Dictionary<char, int>()
+        private static readonly Dictionary<string, Func<string, PathCommand>> DefinedPathCommands = new Dictionary<string, Func<string, PathCommand>>(StringComparer.InvariantCultureIgnoreCase)
         {
-            ['M'] = 2,
-            ['L'] = 2,
-            ['H'] = 1,
-            ['V'] = 1,
-            ['C'] = 6,
-            ['S'] = 4,
-            ['Q'] = 4,
-            ['T'] = 2,
-            ['A'] = 7,
-            ['Z'] = 0,
+            ["M"] = s => new M(s),
+            ["L"] = s => new L(s),
+            ["H"] = s => new H(s),
+            ["V"] = s => new V(s),
+            ["C"] = s => new C(s),
+            ["S"] = s => new S(s),
+            ["Q"] = s => new Q(s),
+            ["T"] = s => new T(s),
+            ["A"] = s => new A(s),
+            ["Z"] = s => new Z(s),
         };
 
-        public abstract int ParameterCount { get; }
+        private float[] values;
+        protected PointF startingPoint, endingPoint;
 
         private static readonly Regex ValueSplit = new Regex(@"[, ]+", RegexOptions.Compiled);
 
-        public PathCommand(string commandString)
+        private PathCommand(in string commandString)
         {
-            if (IsCommand(commandString))
+            (CommandIdentifier, values) = ParseValues(commandString);
+
+            if (values.Length % ParameterCount != 0)
+                throw new ArgumentException($"Command '{CommandIdentifier}' received {values.Length} while expecting a multiple of {ParameterCount}.");
+
+            if(ParameterCount > 1)
             {
-                Values = ValueSplit.Split(commandString, int.MaxValue, 1).Cast<float>().ToArray();
+                var cmd = this[0];
+                startingPoint = new PointF(cmd[ParameterCount - 2], cmd[ParameterCount - 1]);
+
+                cmd = this[values.Length / ParameterCount - 1];
+                endingPoint = new PointF(cmd[ParameterCount - 2], cmd[ParameterCount - 1]);
             }
         }
 
-        public char CommandIdentifier => char.ToUpperInvariant(GetType().Name[0]);
+        public ReadOnlySpan<float> this[int i] => Values.Slice(i * ParameterCount, ParameterCount);
+
+        public abstract int ParameterCount { get; }
+
+        public char CommandIdentifier { get; private set; }
 
         public bool IsAbsolute => char.IsUpper(CommandIdentifier);
 
-        public static bool IsCommand(in string command) 
-            => command != null && command.Length > 0 ? DefinedPathCommands.ContainsKey(char.ToUpperInvariant(command[0])) : false;
-
         public abstract string Format { get; }
 
-        public virtual PointF StartingPoint { get; protected set; }
+        public virtual PointF StartingPoint => startingPoint;
 
-        public virtual PointF EndingPoint { get; protected set; }
+        public virtual PointF EndingPoint => endingPoint;
 
-        public virtual IList<float> Values { get; protected set; }
+        public ReadOnlySpan<float> Values => new ReadOnlySpan<float>(values);
 
-        public override string ToString()
-                => $@"{(IsAbsolute ? CommandIdentifier : char.ToLowerInvariant(CommandIdentifier))}{FormatJoin(Format)}";
+        public static PathCommand Create(in string commandString)
+        {
+            if(string.IsNullOrWhiteSpace(commandString))
+                throw new ArgumentException($"Invalid command string for {nameof(PathCommand)}");
 
-        protected string FormatJoin(string format)
+            string cmd = commandString[0].ToString();
+
+            if (!DefinedPathCommands.ContainsKey(cmd))
+                throw new ArgumentException($"Unidentified path command '{cmd}'");
+
+            return DefinedPathCommands[cmd](commandString);
+        }
+
+        public override string ToString() => $@"{CommandIdentifier}{FormatJoin(Format)}";
+
+        private static (char cmd, float[] values) ParseValues(string commandString)
+            =>
+            (
+                commandString[0],
+                ValueSplit.Split(commandString, 0, 1).Cast<float>().ToArray()
+            );
+
+        private string FormatJoin(string format)
         {
             StringBuilder sb = new StringBuilder();
 
-            for (int i = 0; i < Values.Count; i += ParameterCount)
+            for (int i = 0; i < Values.Length; i += ParameterCount)
             {
-                Values.Skip(i).Take(ParameterCount);
-                sb.Append(string.Format(format, args: Values));
+                sb.Append(string.Format(format, args: Values.Slice(i, ParameterCount).ToArray()));
             }
 
             return sb.ToString();
@@ -69,8 +98,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
         private class M : PathCommand
         {
             public M(string commandString)
-                : base(commandString)
-                => StartingPoint = EndingPoint = new PointF(Values[0], Values[1]);
+                : base(commandString) { }
 
             public override int ParameterCount => 2;
 
@@ -80,15 +108,18 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
         private class L : M
         {
             public L(string commandString)
-                : base(commandString)
-                => StartingPoint = EndingPoint = new PointF(Values[0], Values[1]);
+                : base(commandString) { }
         }
 
         private class H : PathCommand
         {
             public H(string commandString)
                 : base(commandString)
-                => StartingPoint = EndingPoint = new PointF(Values[0], 0);
+            {
+                var vals = Values;
+                startingPoint = new PointF(vals[0], 0);
+                endingPoint = new PointF(vals[vals.Length - 1], 0);
+            }
 
             public override int ParameterCount => 1;
 
@@ -99,17 +130,17 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
         {
             public V(string commandString)
                 : base(commandString)
-                => StartingPoint = EndingPoint = new PointF(0, Values[0]);
+            {
+                var vals = Values;
+                startingPoint = new PointF(0, vals[0]);
+                endingPoint = new PointF(0, vals[vals.Length - 1]);
+            }
         }
 
-        // TODO: Resume work from here
         private class C : PathCommand
         {
             public C(string commandString)
-                : base(commandString)
-            {
-
-            }
+                : base(commandString) { }
 
             public override int ParameterCount => 6;
 
@@ -119,10 +150,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
         private class S : PathCommand
         {
             public S(string commandString)
-                : base(commandString)
-            {
-
-            }
+                : base(commandString) { }
 
             public override int ParameterCount => 4;
 
@@ -132,28 +160,19 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
         private class Q : S
         {
             public Q(string commandString)
-                : base(commandString)
-            {
-
-            }
+                : base(commandString) { }
         }
 
         private class T : M
         {
             public T(string commandString)
-                : base(commandString)
-            {
-
-            }
+                : base(commandString) { }
         }
 
         private class A : PathCommand
         {
             public A(string commandString)
-                : base(commandString)
-            {
-
-            }
+                : base(commandString) { }
 
             public override int ParameterCount => 7;
 
@@ -163,8 +182,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathData.Commands
         private class Z : PathCommand
         {
             public Z(string commandString)
-                : base(commandString)
-            { }
+                : base(commandString) { }
 
             public override int ParameterCount => 0;
 
