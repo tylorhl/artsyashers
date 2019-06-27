@@ -36,7 +36,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             (CommandIdentifier, values) = ParseValues(commandString);
 
             if (values.Length % ParameterCount != 0)
-                throw new ArgumentException($"Command '{CommandIdentifier}' received {values.Length} while expecting a multiple of {ParameterCount}.");
+                throw new ArgumentException($"Command '{CommandIdentifier}' received {values.Length} parameters while expecting a multiple of {ParameterCount}.");
 
             if(ParameterCount > 1)
             {
@@ -85,7 +85,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             =>
             (
                 commandString[0],
-                ValueSplit.Split(commandString.Substring(1), 0, 1).Select(s => float.Parse(s)).ToArray()
+                ValueSplit.Split(commandString.Substring(1), 0, 1).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => float.Parse(s)).ToArray()
             );
 
         private string FormatJoin(string format)
