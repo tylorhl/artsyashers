@@ -80,9 +80,6 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
 
         public PathCommand Transition(PathCommand cmd1, PathCommand cmd2, char transitionType = 'L')
         {
-            // Distance between two paths endpoints
-            // TODO: Make calculation method
-
             var startDelta = new PointF(cmd2.StartingPoint.X - cmd1.StartingPoint.X, cmd2.StartingPoint.Y - cmd1.StartingPoint.Y);
             var endDelta = new PointF(cmd2.EndingPoint.X - cmd1.EndingPoint.X, cmd2.EndingPoint.Y - cmd1.EndingPoint.Y);
             var newPathCommand = PathCommand.Create($"M{startDelta.X},{startDelta.Y}L{endDelta.X},{endDelta.Y}");
