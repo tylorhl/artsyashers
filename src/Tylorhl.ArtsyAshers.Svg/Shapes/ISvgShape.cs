@@ -1,6 +1,6 @@
 ﻿namespace Tylorhl.ArtsyAshers.Svg.Shapes
 {
-    public interface ISvgShape
+    public interface ISvgShape : ISvgElement
     {
     }
 }

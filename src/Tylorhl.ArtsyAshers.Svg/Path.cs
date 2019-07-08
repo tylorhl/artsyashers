@@ -13,6 +13,12 @@ namespace Tylorhl.ArtsyAshers.Svg
 
         public double PathLength { get; set; }
 
+        public string Id { get; set; }
+
+        public bool Transitonary { get; set; } = false;
+
+        public Path() { }
+
         public Path(string data, string style = default, double pathLength = default)
         {
             Data = new PathData(data);

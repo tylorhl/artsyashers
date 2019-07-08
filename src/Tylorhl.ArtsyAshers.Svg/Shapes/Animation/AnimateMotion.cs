@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Tylorhl.ArtsyAshers.Svg.Shapes.Animation
 {
-    public class AnimateMotion
+    public class AnimateMotion : ISvgElement
     {
         public string Dur { get; set; }
         public MPathAttribute MPath { get; set; }
@@ -18,7 +18,7 @@ namespace Tylorhl.ArtsyAshers.Svg.Shapes.Animation
             public string Href { get; set; }
 
             public override string ToString()
-                => $@"<mpath xlink:href=""{Href}"" />";
+                => $@"<mpath href=""{Href}"" />";
         }
     }
 }

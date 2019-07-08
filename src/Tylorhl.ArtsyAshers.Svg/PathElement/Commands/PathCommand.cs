@@ -27,12 +27,21 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
         };
 
         private float[] values;
-        protected PointF startingPoint, endingPoint;
+        protected PointF startingPoint = new PointF(0, 0);
+        protected PointF endingPoint = new PointF(0, 0);
 
         private static readonly Regex ValueSplit = new Regex(@"[, ]+", RegexOptions.Compiled);
 
+        protected PathCommand() {}
+
         private PathCommand(in string commandString)
         {
+            if (commandString.Length == 1)
+            {
+                CommandIdentifier = commandString[0];
+                return;
+            }
+
             (CommandIdentifier, values) = ParseValues(commandString);
 
             if (values.Length % ParameterCount != 0)
@@ -78,14 +87,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             return DefinedPathCommands[cmd](commandString);
         }
 
-        public PathCommand Transition(PathCommand cmd1, PathCommand cmd2, char transitionType = 'L')
-        {
-            var startDelta = new PointF(cmd2.StartingPoint.X - cmd1.StartingPoint.X, cmd2.StartingPoint.Y - cmd1.StartingPoint.Y);
-            var endDelta = new PointF(cmd2.EndingPoint.X - cmd1.EndingPoint.X, cmd2.EndingPoint.Y - cmd1.EndingPoint.Y);
-            var newPathCommand = PathCommand.Create($"M{startDelta.X},{startDelta.Y}L{endDelta.X},{endDelta.Y}");
-
-            return newPathCommand;
-        }
+        
 
         public string ValueString => FormatJoin(Format);
 
@@ -97,6 +99,17 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
                 commandString[0],
                 ValueSplit.Split(commandString.Substring(1), 0, 1).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => float.Parse(s)).ToArray()
             );
+
+        // Short way of getting the final point given an absolute point as the start and a PathCommand as the destination
+        public PointF PointFromPoint(PointF absolutePoint)
+        {
+            if(this.IsAbsolute)
+            {
+                return this.StartingPoint;
+            }
+
+            return new PointF(absolutePoint.X + this.StartingPoint.X, absolutePoint.Y + this.StartingPoint.Y);
+        }
 
         private string FormatJoin(string format)
         {

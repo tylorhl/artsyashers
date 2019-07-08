@@ -1,0 +1,101 @@
+@using System.Collections.Generic
+@using Tylorhl.ArtsyAshers.Svg
+@using Newtonsoft.Json
+@inject HttpClient Http
+
+<svg x="0px" y="0px" viewBox="0 0 1000 1000">
+    <defs>
+        @foreach (var path in SelectedPaths)
+        {
+            <path d="@(path.Data.ToString())" id="path-@(path.Id)"/>
+        }
+    </defs>
+    <g>
+        @for (int i = 0; i < PixelCount; i++)
+        {
+            <circle cx="5" cy="5" r="8" fill="#529fd9" id="p@(i)">
+                @for (int j = 0; j < SelectedPaths.Count; j++)
+                {
+                    var path = SelectedPaths[j];
+                    string id = $"p{i}-m{j}";
+                    string begin = null;
+
+                    if(i != 0)
+                    {
+                        if(j == 0)
+                            begin = $"p{i-1}-m{j}.begin+{PixelDistance}s";
+                        else
+                            begin = $"p{i}-m{j-1}.begin+{(Dur*Loops)*j}s";
+                    }
+
+                    <animateMotion dur="@(Dur)s" begin="@begin" repeatCount="@Loops" id="@id">
+                            <mpath href="#path-@(path.Id)"></mpath>
+                    </animateMotion>
+                }
+            </circle>
+        }
+    </g>
+</svg>
+
+@code {
+    private static List<Path> Paths;
+
+    [Parameter] private int? Seed {get;set;}
+    [Parameter] private uint PixelCount {get;set;} = 40;
+    [Parameter] private uint PathCount {get;set;} = 5;
+    [Parameter] private int Loops {get;set;} = 1000;
+    [Parameter] private double Dur {get;set;} = 5.0;
+    [Parameter] private double PixelDistance {get;set;} = 0.1; // Likely to change
+
+    public List<Path> SelectedPaths {get; private set;} = new List<Path>();
+
+    protected override async Task OnInitAsync()
+    {
+        if(Paths == null)
+        {
+            var pathsDict = await Http.GetJsonAsync<Dictionary<string,string>>("./paths.json");
+            Paths = pathsDict.Select(kvp => new Path(kvp.Value){ Id = kvp.Key }).ToList();
+        }
+
+        SelectedPaths = Paths.ToList();
+
+        Shuffle(SelectedPaths);
+
+        SelectedPaths = SelectedPaths.Take((int)PathCount).ToList();
+
+        // Add transitions
+        for(int i = 0; i < SelectedPaths.Count - 1; i += 2)
+        {
+            var current = SelectedPaths[i];
+            var next = SelectedPaths[i+1];
+
+            var newPath = new Path()
+            {
+                Data = next.Data - current.Data,
+                Transitonary = true,
+                Id = $"{current.Id}-{next.Id}",
+            };
+
+            SelectedPaths.Insert(i+1, newPath);
+        }
+    }
+
+    private void Shuffle(IList<Path> paths)
+    {
+        Random rand = null;
+
+        if(Seed != null)
+            rand = new Random((int)Seed);
+        else
+            rand = new Random();
+
+        int n = paths.Count;  
+        while (n > 1) {  
+            n--;  
+            int k = rand.Next(n + 1);  
+            var value = paths[k];  
+            paths[k] = paths[n];  
+            paths[n] = value;  
+        } 
+    }
+}

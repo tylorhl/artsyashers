@@ -35,6 +35,11 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
 
             try
             {
+                bool calculateEnd = commands.LastOrDefault().ParameterCount != 0;
+
+                if (!calculateEnd)
+                    EndingPoint = StartingPoint;
+
                 for (int i = 0; i < commands.Count; i++)
                 {
                     if(lastCmd != commands[i].CommandIdentifier)
@@ -46,6 +51,10 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
                     else
                         sb.AppendFormat(" {0}", commands[i].ValueString);
 
+                    if(calculateEnd)
+                    {
+                        EndingPoint = commands[i].PointFromPoint(EndingPoint);
+                    }
                 }
 
                 formattedString = sb.ToString();
@@ -60,8 +69,16 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
 
         public PointF StartingPoint => Commands[0].StartingPoint;
 
-        public PointF EndingPoint => Commands.Last().ParameterCount == 0 ? StartingPoint : Commands.Last().EndingPoint;
+        public PointF EndingPoint { get; set; } = new PointF(0, 0);
 
         public override string ToString() => formattedString;
+
+        public static PathData operator -(PathData cmd1, PathData cmd2)
+        {
+            var startDelta = new PointF(cmd2.StartingPoint.X - cmd1.StartingPoint.X, cmd2.StartingPoint.Y - cmd1.StartingPoint.Y);
+            var endDelta = new PointF(cmd2.EndingPoint.X - cmd1.EndingPoint.X, cmd2.EndingPoint.Y - cmd1.EndingPoint.Y);
+
+            return new PathData($"M{startDelta.X},{startDelta.Y}L{endDelta.X},{endDelta.Y}");
+        }
     }
 }
