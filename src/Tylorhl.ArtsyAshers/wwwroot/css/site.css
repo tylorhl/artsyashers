@@ -15,3 +15,11 @@ svg.group
 {
     transform: translate(-50%, -50%)
 }
+
+circle.visible{
+    visibility: visible;
+}
+
+circle.hidden{
+    visibility: hidden;
+}

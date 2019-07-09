@@ -13,36 +13,37 @@
     <g class="group">
         @for (int i = 0; i < PixelCount; i++)
         {
-            <circle cx="5" cy="5" r="8" fill="#FFFFFF" id="p@(i)" style="visibility: hidden;">
+            string fill = i == 0 ? "#FF0000" : "#FFFFFF";
+            <circle cx="5" cy="5" r="8" fill="@fill" id="p@(i)" class="hidden">
                 @{
                     string beginvis = i != 0 ? $"p{i-1}vis.end" : "0s";
+                    double nextDur = 0;
                 }
-                @if(i != 0)
+                @if(i!=0)
                 {
-                    <animate attributeType="CSS" attributeName="visibility" from="hidden" to="visible" begin="@(beginvis)" dur="@(PixelDistance)s" id="p@(i)vis" fill="freeze" values="hidden ; visible" keyTimes="0 ; 1"/>
+                <animate attributeType="XML" attributeName="class" from="hidden" to="visible" begin="@(beginvis)" dur="@(PixelDistance)s" id="p@(i)vis" fill="freeze" values="hidden ; visible" keyTimes="0 ; 1"/>
                 }
 
                 @for (int j = 0; j < SelectedPaths.Count; j++)
                 {
                     var path = SelectedPaths[j];
                     string id = $"p{i}m{j}";
-                    string begin = "0s";
                     int loops = path.Transitonary ? 1 : Loops;
+                    double dur = path.Transitonary ? Dur/4 : Dur;
+                    string begin = "";
 
-                    if(i != 0 || j != 0)
+                    if(j == 0)
                     {
-                        if(j == 0)
-                            begin = $"p{i-1}m{j}.begin+{PixelDistance}s";
-                        else
-                        {
-                            var prevPath = SelectedPaths[j-1];
-                            int prevLoops = prevPath.Transitonary ? 1 : Loops;
-                            begin = $"p{i}m{j-1}.begin+{(Dur * prevLoops)}s";
-                        }
-                            
+                        begin = $"{PixelDistance*i}s; p{i}m{SelectedPaths.Count-1}.end";
+                    }
+                    else
+                    {
+                        begin = $"p{i}m{j-1}.start+{nextDur}s";
                     }
 
-                    <animateMotion dur="@(Dur)s" begin="@begin" repeatCount="@loops" id="@id">
+                    nextDur = dur * loops;
+
+                    <animateMotion dur="@(dur)s" begin="@(begin)" repeatCount="@loops" id="@id">
                             <mpath href="#path@(path.Id)"></mpath>
                     </animateMotion>
                 }
@@ -55,7 +56,7 @@
     private static List<Path> Paths;
 
     [Parameter] private int? Seed {get;set;}
-    [Parameter] private uint PixelCount {get;set;} = 41;
+    [Parameter] private uint PixelCount {get;set;} = 20;
     [Parameter] private uint PathCount {get;set;} = 5;
     [Parameter] private int Loops {get;set;} = 2;
     [Parameter] private double Dur {get;set;} = 5.0;
