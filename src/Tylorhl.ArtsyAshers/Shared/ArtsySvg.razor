@@ -3,33 +3,47 @@
 @using Newtonsoft.Json
 @inject HttpClient Http
 
-<svg x="0px" y="0px" viewBox="0 0 1000 1000">
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" class="container" x="0px" y="0px" viewBox="0 0 1000 1000">
     <defs>
         @foreach (var path in SelectedPaths)
         {
-            <path d="@(path.Data.ToString())" id="path-@(path.Id)"/>
+            <path d="@(path.Data.ToString())" id="path@(path.Id)"/>
         }
     </defs>
-    <g>
+    <g class="group">
         @for (int i = 0; i < PixelCount; i++)
         {
-            <circle cx="5" cy="5" r="8" fill="#529fd9" id="p@(i)">
+            <circle cx="5" cy="5" r="8" fill="#FFFFFF" id="p@(i)" style="visibility: hidden;">
+                @{
+                    string beginvis = i != 0 ? $"p{i-1}vis.end" : "0s";
+                }
+                @if(i != 0)
+                {
+                    <animate attributeType="CSS" attributeName="visibility" from="hidden" to="visible" begin="@(beginvis)" dur="@(PixelDistance)s" id="p@(i)vis" fill="freeze" values="hidden ; visible" keyTimes="0 ; 1"/>
+                }
+
                 @for (int j = 0; j < SelectedPaths.Count; j++)
                 {
                     var path = SelectedPaths[j];
-                    string id = $"p{i}-m{j}";
-                    string begin = null;
+                    string id = $"p{i}m{j}";
+                    string begin = "0s";
+                    int loops = path.Transitonary ? 1 : Loops;
 
-                    if(i != 0)
+                    if(i != 0 || j != 0)
                     {
                         if(j == 0)
-                            begin = $"p{i-1}-m{j}.begin+{PixelDistance}s";
+                            begin = $"p{i-1}m{j}.begin+{PixelDistance}s";
                         else
-                            begin = $"p{i}-m{j-1}.begin+{(Dur*Loops)*j}s";
+                        {
+                            var prevPath = SelectedPaths[j-1];
+                            int prevLoops = prevPath.Transitonary ? 1 : Loops;
+                            begin = $"p{i}m{j-1}.begin+{(Dur * prevLoops)}s";
+                        }
+                            
                     }
 
-                    <animateMotion dur="@(Dur)s" begin="@begin" repeatCount="@Loops" id="@id">
-                            <mpath href="#path-@(path.Id)"></mpath>
+                    <animateMotion dur="@(Dur)s" begin="@begin" repeatCount="@loops" id="@id">
+                            <mpath href="#path@(path.Id)"></mpath>
                     </animateMotion>
                 }
             </circle>
@@ -41,9 +55,9 @@
     private static List<Path> Paths;
 
     [Parameter] private int? Seed {get;set;}
-    [Parameter] private uint PixelCount {get;set;} = 40;
+    [Parameter] private uint PixelCount {get;set;} = 41;
     [Parameter] private uint PathCount {get;set;} = 5;
-    [Parameter] private int Loops {get;set;} = 1000;
+    [Parameter] private int Loops {get;set;} = 2;
     [Parameter] private double Dur {get;set;} = 5.0;
     [Parameter] private double PixelDistance {get;set;} = 0.1; // Likely to change
 
@@ -73,7 +87,7 @@
             {
                 Data = next.Data - current.Data,
                 Transitonary = true,
-                Id = $"{current.Id}-{next.Id}",
+                Id = $"{current.Id}{next.Id}",
             };
 
             SelectedPaths.Insert(i+1, newPath);

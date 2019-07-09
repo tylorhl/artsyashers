@@ -24,6 +24,16 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             ["T"] = s => new T(s),
             ["A"] = s => new A(s),
             ["Z"] = s => new Z(s),
+            ["m"] = s => new M(s),
+            ["l"] = s => new L(s),
+            ["h"] = s => new H(s),
+            ["v"] = s => new V(s),
+            ["c"] = s => new C(s),
+            ["s"] = s => new S(s),
+            ["q"] = s => new Q(s),
+            ["t"] = s => new T(s),
+            ["a"] = s => new A(s),
+            ["z"] = s => new Z(s),
         };
 
         private float[] values;
@@ -119,7 +129,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             {
                 for (int i = 0; i < Values.Length; i += ParameterCount)
                 {
-                    sb.Append(string.Format(format, args: Values.Slice(i, ParameterCount).ToArray().Cast<object>().ToArray()));
+                    sb.Append(string.Format($" {format}", args: Values.Slice(i, ParameterCount).ToArray().Cast<object>().ToArray()));
                 }
 
                 return sb.ToString();

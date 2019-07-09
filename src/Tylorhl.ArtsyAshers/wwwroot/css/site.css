@@ -1,7 +1,17 @@
-﻿svg{
+﻿html,body{
+    margin: 0;
+    padding: 0;
+    background-color: black;
+}
+svg.container{
     position:relative;
       display:block;
     margin:auto;
-    width:600px;
-    height:600px;
+    width:100vw;
+    height:100vh;
+}
+
+svg.group
+{
+    transform: translate(-50%, -50%)
 }

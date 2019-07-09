@@ -75,10 +75,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
 
         public static PathData operator -(PathData cmd1, PathData cmd2)
         {
-            var startDelta = new PointF(cmd2.StartingPoint.X - cmd1.StartingPoint.X, cmd2.StartingPoint.Y - cmd1.StartingPoint.Y);
-            var endDelta = new PointF(cmd2.EndingPoint.X - cmd1.EndingPoint.X, cmd2.EndingPoint.Y - cmd1.EndingPoint.Y);
-
-            return new PathData($"M{startDelta.X},{startDelta.Y}L{endDelta.X},{endDelta.Y}");
+            return new PathData($"M{cmd2.EndingPoint.X},{cmd2.EndingPoint.Y}L{cmd1.StartingPoint.X},{cmd1.StartingPoint.Y}");
         }
     }
 }
