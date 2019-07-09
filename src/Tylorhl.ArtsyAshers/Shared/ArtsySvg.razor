@@ -17,7 +17,7 @@
             <circle cx="5" cy="5" r="8" fill="@fill" id="p@(i)" class="hidden">
                 @{
                     string beginvis = i != 0 ? $"p{i-1}vis.end" : "0s";
-                    double nextDur = 0;
+                    double nextBegin = 0;
                 }
                 @if(i!=0)
                 {
@@ -28,22 +28,18 @@
                 {
                     var path = SelectedPaths[j];
                     string id = $"p{i}m{j}";
+                    double begin = nextBegin;
                     int loops = path.Transitonary ? 1 : Loops;
                     double dur = path.Transitonary ? Dur/4 : Dur;
-                    string begin = "";
 
-                    if(j == 0)
-                    {
-                        begin = $"{PixelDistance*i}s; p{i}m{SelectedPaths.Count-1}.end";
-                    }
-                    else
-                    {
-                        begin = $"p{i}m{j-1}.start+{nextDur}s";
-                    }
+                    if(begin == 0)
+                            begin = PixelDistance*i;
 
-                    nextDur = dur * loops;
+                    nextBegin = begin + (dur * @loops);
 
-                    <animateMotion dur="@(dur)s" begin="@(begin)" repeatCount="@loops" id="@id">
+                    string reloop = j == 0 ? $"; p{i}m{SelectedPaths.Count-1}.end" : "";
+
+                    <animateMotion dur="@(dur)s" begin="@(begin)s@(reloop)" repeatCount="@loops" id="@id">
                             <mpath href="#path@(path.Id)"></mpath>
                     </animateMotion>
                 }
