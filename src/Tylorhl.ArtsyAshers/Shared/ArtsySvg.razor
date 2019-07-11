@@ -2,15 +2,22 @@
 @using Tylorhl.ArtsyAshers.Svg
 @using Newtonsoft.Json
 @inject HttpClient Http
+@inject IJSRuntime JsRuntime
 
 <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" class="container" x="0px" y="0px" viewBox="0 0 1000 1000">
     <defs>
         @foreach (var path in SelectedPaths)
         {
-            <path d="@(path.Data.ToString())" id="path@(path.Id)"/>
+            <path d="@(path.Data.ToString())" id="path@(path.Id)" class="pathcomponent" />
+        }
+        @if(CombinedPath != null)
+        {
+            <path d="@(CombinedPath.Data.ToString())" id="combinedpath"/>
         }
     </defs>
-    <g class="group">
+    @if(CombinedPath != null)
+    {
+        <g class="group">
         @for (int i = 0; i < PixelCount; i++)
         {
             string fill = i == 0 ? "#FF0000" : "#FFFFFF";
@@ -24,39 +31,29 @@
                 <animate attributeType="XML" attributeName="class" from="hidden" to="visible" begin="@(beginvis)" dur="@(PixelDistance)s" id="p@(i)vis" fill="freeze" values="hidden ; visible" keyTimes="0 ; 1"/>
                 }
 
-                @for (int j = 0; j < SelectedPaths.Count; j++)
-                {
-                    var path = SelectedPaths[j];
-                    string id = $"p{i}m{j}";
-                    double begin = nextBegin;
-                    int loops = path.Transitonary ? 1 : Loops;
-                    double dur = path.Transitonary ? Dur/4 : Dur;
-
-                    if(begin == 0)
-                            begin = PixelDistance*i;
-
-                    nextBegin = begin + (dur * @loops);
-
-                    string reloop = j == 0 ? $"; p{i}m{SelectedPaths.Count-1}.end" : "";
-
-                    <animateMotion dur="@(dur)s" begin="@(begin)s@(reloop)" repeatCount="@loops" id="@id">
-                            <mpath href="#path@(path.Id)"></mpath>
+                <animateMotion dur="@(CombinedPath.Duration)s" begin="@(PixelDistance*i)s" repeatCount="indefinite" id="runningAnimation" keyPoints="@KeyPoints" keyTimes="@KeyTimes" calcMode="linear">
+                            <mpath href="#combinedpath"></mpath>
                     </animateMotion>
-                }
             </circle>
         }
     </g>
+    }
+    
+    
 </svg>
 
 @code {
     private static List<Path> Paths;
 
     [Parameter] private int? Seed {get;set;}
-    [Parameter] private uint PixelCount {get;set;} = 20;
+    [Parameter] private uint PixelCount {get;set;} = 45;
     [Parameter] private uint PathCount {get;set;} = 5;
     [Parameter] private int Loops {get;set;} = 2;
     [Parameter] private double Dur {get;set;} = 5.0;
     [Parameter] private double PixelDistance {get;set;} = 0.1; // Likely to change
+    private Path CombinedPath = null;
+    private string KeyPoints;
+    private string KeyTimes;
 
     public List<Path> SelectedPaths {get; private set;} = new List<Path>();
 
@@ -65,7 +62,7 @@
         if(Paths == null)
         {
             var pathsDict = await Http.GetJsonAsync<Dictionary<string,string>>("./paths.json");
-            Paths = pathsDict.Select(kvp => new Path(kvp.Value){ Id = kvp.Key }).ToList();
+            Paths = pathsDict.Select(kvp => new Path(kvp.Value){ Id = kvp.Key, Duration = Dur }).ToList();
         }
 
         SelectedPaths = Paths.ToList();
@@ -85,10 +82,21 @@
                 Data = next.Data - current.Data,
                 Transitonary = true,
                 Id = $"{current.Id}{next.Id}",
+                Duration = Dur/8
             };
 
             SelectedPaths.Insert(i+1, newPath);
         }
+
+        SelectedPaths.Add(new Path()
+            {
+                Data = SelectedPaths.First().Data - SelectedPaths.Last().Data,
+                Transitonary = true,
+                Id = $"{SelectedPaths.First().Id}{SelectedPaths.Last().Id}",
+                Duration = Dur/8
+            });
+
+        CombinedPath = Path.Concat(SelectedPaths.ToArray());
     }
 
     private void Shuffle(IList<Path> paths)
@@ -108,5 +116,28 @@
             paths[k] = paths[n];  
             paths[n] = value;  
         } 
+    }
+
+    protected override async Task OnAfterRenderAsync()
+    {
+        if(KeyPoints != null)
+        return;
+
+        var points = await JsRuntime.InvokeAsync<double[]>("GetPathLengths", null);
+        if(points == null || points.Length == 0)
+            return;
+            
+        double totalDistance = points.Sum();
+        double currentDistance = 0;
+        double currentDur = 0;
+
+        KeyPoints = "0;" + string.Join(";", points.Select(p => (currentDistance += (p/totalDistance))));
+        KeyTimes = "0;" + string.Join(";", SelectedPaths.Select(p => currentDur += p.Duration/CombinedPath.Duration));
+
+        System.Diagnostics.Debug.WriteLine($"KeyPoints set: {KeyPoints}");
+        System.Diagnostics.Debug.WriteLine($"KeyTimes set: {KeyTimes}");
+        System.Diagnostics.Debug.WriteLine($"CombinedPath.Duration set: {CombinedPath.Duration}");
+
+        this.StateHasChanged();
     }
 }

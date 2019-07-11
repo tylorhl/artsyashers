@@ -6,6 +6,13 @@
     <title>Tylorhl.ArtsyAshers</title>
     <base href="/" />
     <link href="css/site.css" rel="stylesheet" />
+    <script>
+        function GetPathLengths() {
+            var paths = Array.prototype.flatMap.call(document.getElementsByClassName("pathcomponent"), x => x.getTotalLength());
+            console.log(paths);
+            return paths;
+        }
+    </script>
 </head>
 <body>
     <app>Loading...</app>

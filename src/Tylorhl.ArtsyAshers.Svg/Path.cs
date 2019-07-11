@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using Tylorhl.ArtsyAshers.Svg.PathElement;
 
@@ -17,6 +19,8 @@ namespace Tylorhl.ArtsyAshers.Svg
 
         public bool Transitonary { get; set; } = false;
 
+        public double Duration { get; set; } = 0;
+
         public Path() { }
 
         public Path(string data, string style = default, double pathLength = default)
@@ -33,5 +37,16 @@ namespace Tylorhl.ArtsyAshers.Svg
                     PathLength > 0 == false ? null : $@" pathLength=""{PathLength}""",
                     Data == null ? null : $@" d=""{string.Join("", Data.ToString())}"""
                 );
+
+        public static Path Concat(params Path[] paths)
+        {
+            string combinedPath = string.Concat(paths.Select(p => p.Data.ToString()));
+
+            Debug.WriteLine(combinedPath);
+
+            var newDur = paths.Sum(p => p.Duration);
+
+            return new Path(combinedPath) { Duration = newDur };
+        }
     }
 }
