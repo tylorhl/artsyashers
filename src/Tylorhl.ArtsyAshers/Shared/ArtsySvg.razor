@@ -1,8 +1,10 @@
 @using System.Collections.Generic
 @using Tylorhl.ArtsyAshers.Svg
 @using Newtonsoft.Json
+@using Microsoft.AspNetCore.WebUtilities
 @inject HttpClient Http
 @inject IJSRuntime JsRuntime
+@inject IUriHelper UriHelper
 
 <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" class="container" x="0px" y="0px" viewBox="0 0 1000 1000">
     <defs>
@@ -20,16 +22,12 @@
         <g class="group">
         @for (int i = 0; i < PixelCount; i++)
         {
-            string fill = i == 0 ? "#FF0000" : "#FFFFFF";
-            <circle cx="5" cy="5" r="8" fill="@fill" id="p@(i)" class="hidden">
+            <circle cx="5" cy="5" r="@PixelR" fill="@PixelColor" id="p@(i)" class="hidden">
                 @{
                     string beginvis = i != 0 ? $"p{i-1}vis.end" : "0s";
                     double nextBegin = 0;
                 }
-                @if(i!=0)
-                {
                 <animate attributeType="XML" attributeName="class" from="hidden" to="visible" begin="@(beginvis)" dur="@(PixelDistance)s" id="p@(i)vis" fill="freeze" values="hidden ; visible" keyTimes="0 ; 1"/>
-                }
 
                 <animateMotion dur="@(CombinedPath.Duration)s" begin="@(PixelDistance*i)s" repeatCount="indefinite" id="runningAnimation" keyPoints="@KeyPoints" keyTimes="@KeyTimes" calcMode="linear">
                             <mpath href="#combinedpath"></mpath>
@@ -46,11 +44,13 @@
     private static List<Path> Paths;
 
     [Parameter] private int? Seed {get;set;}
-    [Parameter] private uint PixelCount {get;set;} = 45;
+    [Parameter] private uint PixelCount {get;set;} = 80;
     [Parameter] private uint PathCount {get;set;} = 5;
     [Parameter] private int Loops {get;set;} = 2;
-    [Parameter] private double Dur {get;set;} = 5.0;
-    [Parameter] private double PixelDistance {get;set;} = 0.1; // Likely to change
+    [Parameter] private double Dur {get;set;} = 6.0;
+    [Parameter] private double PixelDistance {get;set;} = 0.05; // Likely to change
+    [Parameter] private double PixelR {get;set;} = 4;
+    [Parameter] private string PixelColor {get;set;} = "#FFFFFF";
     private Path CombinedPath = null;
     private string KeyPoints;
     private string KeyTimes;
@@ -59,6 +59,8 @@
 
     protected override async Task OnInitAsync()
     {
+        UriHelper.OnLocationChanged += OnLocationChanges;
+        SetFromQuery();
         if(Paths == null)
         {
             var pathsDict = await Http.GetJsonAsync<Dictionary<string,string>>("./paths.json");
@@ -99,6 +101,28 @@
         CombinedPath = Path.Concat(SelectedPaths.ToArray());
     }
 
+    private void OnLocationChanges(object sender, LocationChangedEventArgs args)
+    {
+        SetFromQuery();
+        this.StateHasChanged();
+    }
+
+    private void SetFromQuery()
+    {
+        Uri uri = new Uri(UriHelper.GetAbsoluteUri());
+        string values = uri.Fragment;
+
+        values = values?.TrimStart('#') ?? uri.Query;
+        var query = QueryHelpers.ParseQuery(values);
+
+        Dur = query.TryGetValue(nameof(Dur), out var val) ? double.Parse(val.First()) : Dur;
+        PixelCount = query.TryGetValue(nameof(PixelCount), out val) ? uint.Parse(val.First()) : PixelCount;
+        PixelDistance = query.TryGetValue(nameof(PixelDistance), out val) ? double.Parse(val.First()) : PixelDistance;
+        Seed = query.TryGetValue(nameof(Seed), out val) ? int.Parse(val.First()) : Seed;
+        PixelR = query.TryGetValue(nameof(PixelR), out val) ? double.Parse(val.First()) : PixelR;
+        PixelColor = query.TryGetValue(nameof(PixelColor), out val) ? val.First() : PixelColor;
+    }
+
     private void Shuffle(IList<Path> paths)
     {
         Random rand = null;
@@ -134,10 +158,11 @@
         KeyPoints = "0;" + string.Join(";", points.Select(p => (currentDistance += (p/totalDistance))));
         KeyTimes = "0;" + string.Join(";", SelectedPaths.Select(p => currentDur += p.Duration/CombinedPath.Duration));
 
-        System.Diagnostics.Debug.WriteLine($"KeyPoints set: {KeyPoints}");
-        System.Diagnostics.Debug.WriteLine($"KeyTimes set: {KeyTimes}");
-        System.Diagnostics.Debug.WriteLine($"CombinedPath.Duration set: {CombinedPath.Duration}");
-
         this.StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        UriHelper.OnLocationChanged -= OnLocationChanges;
     }
 }
