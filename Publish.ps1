@@ -2,9 +2,9 @@ $workingDir = $PWD
 cd "$PSScriptRoot/src/Tylorhl.ArtsyAshers";
 dotnet publish -c Release;
 
-rm "$PSScriptRoot/site/*" -r
+rm "$PSScriptRoot/docs/*" -r
 
-cp ./bin/Release/netstandard2.0/publish/Tylorhl.ArtsyAshers/dist/* "$PSScriptRoot/site/" -Recurse
+cp ./bin/Release/netstandard2.0/publish/Tylorhl.ArtsyAshers/dist/* "$PSScriptRoot/docs/" -Recurse
 
 rm ./bin/Release -r
 
