@@ -9,8 +9,25 @@
     <script>
         function GetPathLengths() {
             var paths = Array.prototype.flatMap.call(document.getElementsByClassName("pathcomponent"), x => x.getTotalLength());
-            console.log(paths);
             return paths;
+        }
+
+        function GetPathWidths() {
+            var paths = Array.prototype.flatMap.call(document.getElementsByClassName("pathcomponent"), x => x.getBBox().width);
+            return paths;
+        }
+
+        function GetPathHeights() {
+            var paths = Array.prototype.flatMap.call(document.getElementsByClassName("pathcomponent"), x => x.getBBox().height);
+            return paths;
+        }
+
+        function GetViewPortWidth() {
+            return document.documentElement.clientWidth;
+        }
+
+        function GetViewPortHeight() {
+            return document.documentElement.clientHeight;
         }
     </script>
 </head>

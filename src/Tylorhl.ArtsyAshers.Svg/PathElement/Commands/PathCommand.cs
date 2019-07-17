@@ -37,8 +37,6 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
         };
 
         private float[] values;
-        protected PointF startingPoint = new PointF(0, 0);
-        protected PointF endingPoint = new PointF(0, 0);
 
         private static readonly Regex ValueSplit = new Regex(@"[, ]+", RegexOptions.Compiled);
 
@@ -56,16 +54,6 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
 
             if (values.Length % ParameterCount != 0)
                 throw new ArgumentException($"Command '{CommandIdentifier}' received {values.Length} parameters while expecting a multiple of {ParameterCount}.");
-
-            if(ParameterCount > 1)
-            {
-                // TODO: These are wrong
-                var cmd = this[0];
-                startingPoint = new PointF(cmd[ParameterCount - 2], cmd[ParameterCount - 1]);
-
-                cmd = this[values.Length / ParameterCount - 1];
-                endingPoint = new PointF(cmd[ParameterCount - 2], cmd[ParameterCount - 1]);
-            }
         }
 
         public ReadOnlySpan<float> this[int i] => Values.Slice(i * ParameterCount, ParameterCount);
@@ -78,9 +66,9 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
 
         public abstract string Format { get; }
 
-        public virtual PointF StartingPoint => startingPoint;
+        public virtual PointF StartingPoint => new PointF(this[0][ParameterCount - 2], this[0][ParameterCount - 1]);
 
-        public virtual PointF EndingPoint => endingPoint;
+        public virtual PointF EndingPoint => new PointF(this[values.Length / ParameterCount - 1][ParameterCount - 2], this[values.Length / ParameterCount - 1][ParameterCount - 1]);
 
         public ReadOnlySpan<float> Values => new ReadOnlySpan<float>(values);
 
@@ -121,6 +109,20 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             return new PointF(absolutePoint.X + this.StartingPoint.X, absolutePoint.Y + this.StartingPoint.Y);
         }
 
+        public void Translate(PointF point)
+        {
+            if (!IsAbsolute)
+                return;
+
+            var values = new Span<float>(this.values);
+            for (int i = 0; i < values.Length; i += ParameterCount)
+            {
+                Translate(point, values.Slice(i, ParameterCount));
+            }
+        }
+
+        protected abstract void Translate(PointF point, Span<float> commandParams);
+
         private string FormatJoin(string format)
         {
             var sb = sbPool.Get();
@@ -148,6 +150,12 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             public override int ParameterCount => 2;
 
             public override string Format => @"{0},{1}";
+
+            protected override void Translate(PointF point, Span<float> commandParams)
+            {
+                commandParams[0] = commandParams[0] + point.X;
+                commandParams[1] = commandParams[1] + point.Y;
+            }
         }
 
         private class L : M
@@ -161,14 +169,20 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             public H(string commandString)
                 : base(commandString)
             {
-                var vals = Values;
-                startingPoint = new PointF(vals[0], 0);
-                endingPoint = new PointF(vals[vals.Length - 1], 0);
             }
+
+            public override PointF StartingPoint => new PointF(Values[0], 0);
+
+            public override PointF EndingPoint => new PointF(Values[Values.Length - 1], 0);
 
             public override int ParameterCount => 1;
 
             public override string Format => @"{0}";
+
+            protected override void Translate(PointF point, Span<float> commandParams)
+            {
+                commandParams[0] = commandParams[0] + point.X;
+            }
         }
 
         private class V : H
@@ -176,9 +190,15 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             public V(string commandString)
                 : base(commandString)
             {
-                var vals = Values;
-                startingPoint = new PointF(0, vals[0]);
-                endingPoint = new PointF(0, vals[vals.Length - 1]);
+            }
+
+            public override PointF StartingPoint => new PointF(0, Values[0]);
+
+            public override PointF EndingPoint => new PointF(0, Values[Values.Length - 1]);
+
+            protected override void Translate(PointF point, Span<float> commandParams)
+            {
+                commandParams[0] = commandParams[0] + point.Y;
             }
         }
 
@@ -190,6 +210,15 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             public override int ParameterCount => 6;
 
             public override string Format => @"{0},{1} {2},{3} {4},{5}";
+
+            protected override void Translate(PointF point, Span<float> commandParams)
+            {
+                for(int i = 0; i < commandParams.Length; i += 2)
+                {
+                    commandParams[i] = commandParams[i] + point.X;
+                    commandParams[i+1] = commandParams[i+1] + point.Y;
+                }
+            }
         }
 
         private class S : PathCommand
@@ -200,6 +229,15 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             public override int ParameterCount => 4;
 
             public override string Format => @"{0},{1} {2},{3}";
+
+            protected override void Translate(PointF point, Span<float> commandParams)
+            {
+                for (int i = 0; i < commandParams.Length; i += 2)
+                {
+                    commandParams[i] = commandParams[i] + point.X;
+                    commandParams[i + 1] = commandParams[i + 1] + point.Y;
+                }
+            }
         }
 
         private class Q : S
@@ -222,6 +260,12 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             public override int ParameterCount => 7;
 
             public override string Format => @"{0} {1} {2} {3} {4} {5},{6}";
+
+            protected override void Translate(PointF point, Span<float> commandParams)
+            {
+                commandParams[5] = commandParams[5] + point.X;
+                commandParams[6] = commandParams[6] + point.Y;
+            }
         }
 
         private class Z : PathCommand
@@ -229,9 +273,16 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
             public Z(string commandString)
                 : base(commandString) { }
 
+            public override PointF StartingPoint => default;
+
+            public override PointF EndingPoint => default;
+
             public override int ParameterCount => 0;
 
             public override string Format => @"";
+
+            protected override void Translate(PointF point, Span<float> commandParams)
+            { }
         }
     }
 }

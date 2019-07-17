@@ -27,6 +27,34 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
             for (int i = 1; i < cmds.Length; i++)
                 this.commands.Add(PathCommand.Create(cmds[i]));
 
+            Calculate();
+        }
+
+        public IReadOnlyList<PathCommand> Commands => commands.AsReadOnly();
+
+        public PointF StartingPoint => Commands[0].StartingPoint;
+
+        public PointF EndingPoint { get; set; } = new PointF(0, 0);
+
+        public void Translate(PointF point)
+        {
+            foreach(var command in commands)
+            {
+                command.Translate(point);
+            }
+
+            Calculate();
+        }
+
+        public override string ToString() => formattedString;
+
+        public static PathData operator -(PathData cmd1, PathData cmd2)
+        {
+            return new PathData($"M{cmd2.EndingPoint.X},{cmd2.EndingPoint.Y}L{cmd1.StartingPoint.X},{cmd1.StartingPoint.Y}");
+        }
+
+        private void Calculate()
+        {
             // Since he commands collection is immutable from the outside
             // create the formatted string ahead of time with command shorthand
             char lastCmd = default;
@@ -42,7 +70,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
 
                 for (int i = 0; i < commands.Count; i++)
                 {
-                    if(lastCmd != commands[i].CommandIdentifier)
+                    if (lastCmd != commands[i].CommandIdentifier)
                     {
                         lastCmd = commands[i].CommandIdentifier;
                         sb.Append(lastCmd);
@@ -51,7 +79,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
                     else
                         sb.AppendFormat(" {0}", commands[i].ValueString);
 
-                    if(calculateEnd)
+                    if (calculateEnd)
                     {
                         EndingPoint = commands[i].PointFromPoint(EndingPoint);
                     }
@@ -63,19 +91,6 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement
             {
                 sbPool.Return(sb);
             }
-        }
-
-        public IReadOnlyList<PathCommand> Commands => commands.AsReadOnly();
-
-        public PointF StartingPoint => Commands[0].StartingPoint;
-
-        public PointF EndingPoint { get; set; } = new PointF(0, 0);
-
-        public override string ToString() => formattedString;
-
-        public static PathData operator -(PathData cmd1, PathData cmd2)
-        {
-            return new PathData($"M{cmd2.EndingPoint.X},{cmd2.EndingPoint.Y}L{cmd1.StartingPoint.X},{cmd1.StartingPoint.Y}");
         }
     }
 }

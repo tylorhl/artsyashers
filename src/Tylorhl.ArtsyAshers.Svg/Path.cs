@@ -42,8 +42,6 @@ namespace Tylorhl.ArtsyAshers.Svg
         {
             string combinedPath = string.Concat(paths.Select(p => p.Data.ToString()));
 
-            Debug.WriteLine(combinedPath);
-
             var newDur = paths.Sum(p => p.Duration);
 
             return new Path(combinedPath) { Duration = newDur };

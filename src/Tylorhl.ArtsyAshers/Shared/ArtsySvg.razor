@@ -1,17 +1,18 @@
 @using System.Collections.Generic
 @using Tylorhl.ArtsyAshers.Svg
-@using Newtonsoft.Json
+@using System.Drawing;
 @using Microsoft.AspNetCore.WebUtilities
 @inject HttpClient Http
 @inject IJSRuntime JsRuntime
 @inject IUriHelper UriHelper
 
-<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" class="container" x="0px" y="0px" viewBox="0 0 1000 1000">
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="2.0" class="container" x="0px" y="0px">
     <defs>
         @foreach (var path in SelectedPaths)
         {
             <path d="@(path.Data.ToString())" id="path@(path.Id)" class="pathcomponent" />
         }
+        
         @if(CombinedPath != null)
         {
             <path d="@(CombinedPath.Data.ToString())" id="combinedpath"/>
@@ -46,59 +47,24 @@
     [Parameter] private int? Seed {get;set;}
     [Parameter] private uint PixelCount {get;set;} = 80;
     [Parameter] private uint PathCount {get;set;} = 5;
+    [Parameter] private int PathTransitionFactor {get;set;} = 8;
     [Parameter] private int Loops {get;set;} = 2;
     [Parameter] private double Dur {get;set;} = 6.0;
     [Parameter] private double PixelDistance {get;set;} = 0.05; // Likely to change
     [Parameter] private double PixelR {get;set;} = 4;
     [Parameter] private string PixelColor {get;set;} = "#FFFFFF";
+    private (float width, float height) ViewPort {get;set;}
     private Path CombinedPath = null;
     private string KeyPoints;
     private string KeyTimes;
+    private int RenderPhase = 0;
 
     public List<Path> SelectedPaths {get; private set;} = new List<Path>();
 
-    protected override async Task OnInitAsync()
+    protected override void OnInit()
     {
         UriHelper.OnLocationChanged += OnLocationChanges;
         SetFromQuery();
-        if(Paths == null)
-        {
-            var pathsDict = await Http.GetJsonAsync<Dictionary<string,string>>("./paths.json");
-            Paths = pathsDict.Select(kvp => new Path(kvp.Value){ Id = kvp.Key, Duration = Dur }).ToList();
-        }
-
-        SelectedPaths = Paths.ToList();
-
-        Shuffle(SelectedPaths);
-
-        SelectedPaths = SelectedPaths.Take((int)PathCount).ToList();
-
-        // Add transitions
-        for(int i = 0; i < SelectedPaths.Count - 1; i += 2)
-        {
-            var current = SelectedPaths[i];
-            var next = SelectedPaths[i+1];
-
-            var newPath = new Path()
-            {
-                Data = next.Data - current.Data,
-                Transitonary = true,
-                Id = $"{current.Id}{next.Id}",
-                Duration = Dur/8
-            };
-
-            SelectedPaths.Insert(i+1, newPath);
-        }
-
-        SelectedPaths.Add(new Path()
-            {
-                Data = SelectedPaths.First().Data - SelectedPaths.Last().Data,
-                Transitonary = true,
-                Id = $"{SelectedPaths.First().Id}{SelectedPaths.Last().Id}",
-                Duration = Dur/8
-            });
-
-        CombinedPath = Path.Concat(SelectedPaths.ToArray());
     }
 
     private void OnLocationChanges(object sender, LocationChangedEventArgs args)
@@ -123,15 +89,8 @@
         PixelColor = query.TryGetValue(nameof(PixelColor), out val) ? val.First() : PixelColor;
     }
 
-    private void Shuffle(IList<Path> paths)
+    private void Shuffle(IList<Path> paths, Random rand)
     {
-        Random rand = null;
-
-        if(Seed != null)
-            rand = new Random((int)Seed);
-        else
-            rand = new Random();
-
         int n = paths.Count;  
         while (n > 1) {  
             n--;  
@@ -144,21 +103,94 @@
 
     protected override async Task OnAfterRenderAsync()
     {
-        if(KeyPoints != null)
-        return;
+        if(Paths == null)
+        {
+            var pathsDict = await Http.GetJsonAsync<Dictionary<string,string>>("./paths.json");
+            Paths = pathsDict.Select(kvp => new Path(kvp.Value){ Id = kvp.Key, Duration = Dur }).ToList();
+        }
 
-        var points = await JsRuntime.InvokeAsync<double[]>("GetPathLengths", null);
-        if(points == null || points.Length == 0)
-            return;
+        Random rand = null;
+
+        if(Seed != null)
+            rand = new Random((int)Seed);
+        else
+            rand = new Random();
+
+        if(RenderPhase == 0)
+        {
+            ViewPort = (await JsRuntime.InvokeAsync<float>("GetViewPortWidth"), await JsRuntime.InvokeAsync<float>("GetViewPortHeight"));
+
+            if(ViewPort.width == 0)
+                return;
+
+            SelectedPaths = Paths.ToList();
+
+            Shuffle(SelectedPaths, rand);
+
+            SelectedPaths = SelectedPaths.Take((int)PathCount).ToList();
             
-        double totalDistance = points.Sum();
-        double currentDistance = 0;
-        double currentDur = 0;
+            RenderPhase++;
+            this.StateHasChanged();
+        }
+        else if(RenderPhase == 1)
+        {
+            var heights = await JsRuntime.InvokeAsync<double[]>("GetPathHeights", null);
+            var widths = await JsRuntime.InvokeAsync<double[]>("GetPathWidths", null);
+                
+            // Add transitions
+            for(int i = 0; i < SelectedPaths.Count - 1; i += 2)
+            {
+                var current = SelectedPaths[i];
+                var next = SelectedPaths[i+1];
 
-        KeyPoints = "0;" + string.Join(";", points.Select(p => (currentDistance += (p/totalDistance))));
-        KeyTimes = "0;" + string.Join(";", SelectedPaths.Select(p => currentDur += p.Duration/CombinedPath.Duration));
+                if (i == 0)
+                {
+                    current.Data.Translate(new PointF((float)rand.Next(0,(int)(ViewPort.width - widths[i])), (float)rand.Next(0,(int)(ViewPort.height - heights[i]))));
+                }
 
-        this.StateHasChanged();
+                next.Data.Translate(new PointF((float)rand.Next(0,(int)(ViewPort.width - widths[i])), (float)rand.Next(0,(int)(ViewPort.height - heights[i]))));
+
+                var newPath = new Path()
+                {
+                    Data = next.Data - current.Data,
+                    Transitonary = true,
+                    Id = $"{current.Id}{next.Id}",
+                    Duration = Dur/PathTransitionFactor
+                };
+
+                SelectedPaths.Insert(i+1, newPath);
+            }
+
+            SelectedPaths.Add(new Path()
+                {
+                    Data = SelectedPaths.First().Data - SelectedPaths.Last().Data,
+                    Transitonary = true,
+                    Id = $"{SelectedPaths.First().Id}{SelectedPaths.Last().Id}",
+                    Duration = Dur/PathTransitionFactor
+                });
+
+
+            CombinedPath = Path.Concat(SelectedPaths.ToArray());
+            RenderPhase++;
+            this.StateHasChanged();
+        }
+        else if(RenderPhase == 2)
+        {
+            var points = await JsRuntime.InvokeAsync<double[]>("GetPathLengths", null);
+            
+            if(points == null || points.Length == 0)
+                return;
+
+            double currentDistance = 0;
+            double currentDur = 0;
+            double totalDistance = points.Sum();
+
+            KeyPoints = "0;" + string.Join(";", points.Select(p => (currentDistance += (p/totalDistance))));
+            KeyTimes = "0;" + string.Join(";", SelectedPaths.Select(p => currentDur += p.Duration/CombinedPath.Duration));
+
+            RenderPhase++;
+            this.StateHasChanged();
+        }
     }
 
     public void Dispose()
