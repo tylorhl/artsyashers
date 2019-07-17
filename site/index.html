@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Tylorhl.ArtsyAshers</title>
+    <base href="/" />
+    <link href="css/site.css" rel="stylesheet" />
+    <script>
+        function GetPathLengths() {
+            var paths = Array.prototype.flatMap.call(document.getElementsByClassName("pathcomponent"), x => x.getTotalLength());
+            return paths;
+        }
+
+        function GetPathWidths() {
+            var paths = Array.prototype.flatMap.call(document.getElementsByClassName("pathcomponent"), x => x.getBBox().width);
+            return paths;
+        }
+
+        function GetPathHeights() {
+            var paths = Array.prototype.flatMap.call(document.getElementsByClassName("pathcomponent"), x => x.getBBox().height);
+            return paths;
+        }
+
+        function GetViewPortWidth() {
+            return document.documentElement.clientWidth;
+        }
+
+        function GetViewPortHeight() {
+            return document.documentElement.clientHeight;
+        }
+    </script>
+</head>
+<body>
+    <app>Loading...</app>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>
