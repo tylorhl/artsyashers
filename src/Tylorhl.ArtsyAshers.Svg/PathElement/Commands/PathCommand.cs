@@ -52,7 +52,7 @@ namespace Tylorhl.ArtsyAshers.Svg.PathElement.Commands
 
             (CommandIdentifier, values) = ParseValues(commandString);
 
-            if (values.Length % ParameterCount != 0)
+            if (values.Length > 0 && values.Length % ParameterCount != 0)
                 throw new ArgumentException($"Command '{CommandIdentifier}' received {values.Length} parameters while expecting a multiple of {ParameterCount}.");
         }
 
