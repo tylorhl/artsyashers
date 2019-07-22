@@ -28,7 +28,11 @@
                     string beginvis = i != 0 ? $"p{i-1}vis.end" : "0s";
                     double nextBegin = 0;
                 }
-                <animate attributeType="XML" attributeName="class" from="hidden" to="visible" begin="@(beginvis)" dur="@(PixelDistance)s" id="p@(i)vis" fill="freeze" values="hidden ; visible" keyTimes="0 ; 1"/>
+
+                @if(i > 0)
+                {
+                    <animate attributeType="XML" attributeName="class" from="hidden" to="visible" begin="@(beginvis)" dur="@(PixelDistance)s" id="p@(i)vis" fill="freeze" values="hidden ; visible" keyTimes="0 ; 1"/>
+                }
 
                 <animateMotion dur="@(CombinedPath.Duration)s" begin="@(PixelDistance*i)s" repeatCount="indefinite" id="runningAnimation" keyPoints="@KeyPoints" keyTimes="@KeyTimes" calcMode="linear">
                             <mpath href="#combinedpath"></mpath>

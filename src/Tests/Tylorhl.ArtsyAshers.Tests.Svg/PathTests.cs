@@ -19,11 +19,11 @@ namespace Tylorhl.ArtsyAshers.Tests.Svg
         }
 
         [TestMethod]
-        [DataRow("M0,0L0,1L0,0L1,0", @"<path d=""M0,0L0,1 0,0 1,0""/>")]
+        [DataRow("M0,0L0,1L0,0L1,0", @"<path d=""M 0,0L 0,1  0,0  1,0""/>")]
         public void FormattingTest(string pathData, string expected)
         {
             var xml = new Path(pathData).ToString();
-            Assert.AreEqual(xml, expected, $"Path output '{xml}' doesn't match expected value '{expected}'.");
+            Assert.AreEqual(expected, xml, $"Path output '{xml}' doesn't match expected value '{expected}'.");
         }
     }
 }
