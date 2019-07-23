@@ -1,0 +1,1 @@
+Start-Job -ScriptBlock { dotnet run --project "$Input/src/Tylorhl.ArtsyAshers/Tylorhl.ArtsyAshers.csproj" } -InputObject $PSScriptRoot
