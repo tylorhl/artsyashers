@@ -138,43 +138,27 @@
         }
         else if(RenderPhase == 1)
         {
-            var heights = await JsRuntime.InvokeAsync<double[]>("GetPathHeights", null);
-            var widths = await JsRuntime.InvokeAsync<double[]>("GetPathWidths", null);
-                
-            // Add transitions
-            for(int i = 0; i < SelectedPaths.Count - 1; i += 2)
+            if(SelectedPaths.Count > 1)
             {
-                var current = SelectedPaths[i];
-                var next = SelectedPaths[i+1];
-
-                if (i == 0)
+                var heights = await JsRuntime.InvokeAsync<double[]>("GetPathHeights", null);
+                var widths = await JsRuntime.InvokeAsync<double[]>("GetPathWidths", null);
+                    
+                // Add translations
+                for(int i = 0; i < SelectedPaths.Count - 1; i++)
                 {
-                    current.Data.Translate(new PointF((float)rand.Next(0,(int)(ViewPort.width - widths[i])), (float)rand.Next(0,(int)(ViewPort.height - heights[i]))));
+                    var current = SelectedPaths[i];
+                    var next = SelectedPaths[i+1];
+
+                    if (i == 0)
+                    {
+                        current.Data.Translate(new PointF((float)rand.Next(0,(int)(ViewPort.width - widths[i])), (float)rand.Next(0,(int)(ViewPort.height - heights[i]))));
+                    }
+
+                    next.Data.Translate(new PointF((float)rand.Next(0,(int)(ViewPort.width - widths[i])), (float)rand.Next(0,(int)(ViewPort.height - heights[i]))));
                 }
-
-                next.Data.Translate(new PointF((float)rand.Next(0,(int)(ViewPort.width - widths[i])), (float)rand.Next(0,(int)(ViewPort.height - heights[i]))));
-
-                var newPath = new Path()
-                {
-                    Data = next.Data - current.Data,
-                    Transitonary = true,
-                    Id = $"{current.Id}{next.Id}",
-                    Duration = Dur/PathTransitionFactor
-                };
-
-                SelectedPaths.Insert(i+1, newPath);
             }
-
-            SelectedPaths.Add(new Path()
-                {
-                    Data = SelectedPaths.First().Data - SelectedPaths.Last().Data,
-                    Transitonary = true,
-                    Id = $"{SelectedPaths.First().Id}{SelectedPaths.Last().Id}",
-                    Duration = Dur/PathTransitionFactor
-                });
-
-
-            CombinedPath = Path.Concat(SelectedPaths.ToArray());
+                CombinedPath = Path.Concat(SelectedPaths.ToArray());
+            
             RenderPhase++;
             this.StateHasChanged();
         }
